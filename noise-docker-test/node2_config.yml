@@ -133,9 +133,9 @@ punchy:
 
 # Cipher allows you to choose between the available ciphers for your network. Options are chachapoly or aes
 # IMPORTANT: this value must be identical on ALL NODES/LIGHTHOUSES. We do not/will not support use of different ciphers simultaneously!
-#cipher: fips-aes
+cipher: fips-aes
 #cipher: chachapoly
-cipher: aes
+#cipher: aes
 
 # Preferred ranges is used to define a hint about the local network ranges, which speeds up discovering the fastest
 # path to a network adjacent nebula node.
