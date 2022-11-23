@@ -1,9 +1,9 @@
 package noise
 
 /*
-#cgo LDFLAGS: -L ./lib/ -lcrypto
-#cgo LDFLAGS: -L ./lib/ -lssl
-#cgo CFLAGS: -I ./include/
+#cgo LDFLAGS: -L${SRCDIR}/libs -lcrypto
+#cgo LDFLAGS: -L${SRCDIR}/libs -lssl
+#cgo CFLAGS: -I./include
 #include "openssl/evp.h"
 #include "openssl/aes.h"
 */
