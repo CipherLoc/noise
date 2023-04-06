@@ -4,13 +4,11 @@
 package noise
 
 /*
-#cgo LDFLAGS: -L ./lib/ -leay32
-#cgo LDFLAGS: -L ./lib/ -lssleay32
-#cgo LDFLAGS: -L ./lib/ -lpec
+#cgo LDFLAGS: -L ./libs -llibpec
+#cgo LDFLAGS: -L ./libs -llibeay32
+#cgo LDFLAGS: -L ./libs -lssleay32
 #cgo CFLAGS: -I ./include/
-#include "openssl/evp.h"
-#include "openssl/aes.h"
-#include "Engine_Ex.h"
+#include <Engine_EX.h>
 */
 import "C"
 
@@ -97,7 +95,8 @@ func (c aeadCipher) Encrypt(out []byte, n uint64, ad, plaintext []byte) []byte {
 
 	if len(plaintext) > 0 && c.name == "AESGCMFIPS" {
 		var inputArray []byte = []byte(plaintext)
-		var key string = string(c.Key())
+		var k [32]byte = c.Key()
+		var key string = string(k[:])
 
 		output := EncryptPEC(string(key), inputArray)
 		ciphertext := c.Seal(out, c.nonce(n), output, ad)
@@ -117,9 +116,10 @@ func (c aeadCipher) Decrypt(out []byte, n uint64, ad, ciphertext []byte) ([]byte
 	}
 
 	if len(ctext) > 0 && c.name == "AESGCMFIPS" {
-		var key string = string(c.Key())
+		var k [32]byte = c.Key()
+		var key string = string(k[:])
 
-		output := C.DecryptPEC(key, cText)
+		output := DecryptPEC(key, ctext)
 		return output, nil
 	}
 

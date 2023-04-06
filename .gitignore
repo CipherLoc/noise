@@ -4,8 +4,10 @@
 *.dll
 *.so
 *.dylib
+*.def
+*.lib
 *.code-workspace
-lib
+libs/engines
 
 # Test binary, built with `go test -c`
 *.test

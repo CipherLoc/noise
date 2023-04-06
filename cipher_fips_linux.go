@@ -4,13 +4,11 @@
 package noise
 
 /*
-#cgo LDFLAGS: -L ./lib/ -lcrypto
-#cgo LDFLAGS: -L ./lib/ -lssl
-#cgo LDFLAGS: -L ./lib/ -lpec
+#cgo LDFLAGS: -L ./libs -lcrypto
+#cgo LDFLAGS: -L ./libs -lssl
+#cgo LDFLAGS: -L ./libs -lpec
 #cgo CFLAGS: -I ./include/
-#include "openssl/evp.h"
-#include "openssl/aes.h"
-#include "Engine_EX.h"
+#include <Engine_EX.h>
 */
 import "C"
 
@@ -46,14 +44,6 @@ func cipherAESGCMFIPS(k [32]byte) Cipher {
 		"AESGCMFIPS",
 	}
 }
-
-// type (
-// 	Ctx *C.EVP_CIPHER_CTX
-// )
-
-// func Get_Ctx() Ctx {
-// 	return C.EVP_CIPHER_CTX_new()
-// }
 
 func EncryptPEC(key string, input []byte) []byte {
 	// BRIDGE GO VARS TO C VARS
@@ -97,7 +87,8 @@ func (c aeadCipher) Encrypt(out []byte, n uint64, ad, plaintext []byte) []byte {
 
 	if len(plaintext) > 0 && c.name == "AESGCMFIPS" {
 		var inputArray []byte = []byte(plaintext)
-		var key string = string(c.Key())
+		var k [32]byte = c.Key()
+		var key string = string(k[:])
 
 		output := EncryptPEC(string(key), inputArray)
 		ciphertext := c.Seal(out, c.nonce(n), output, ad)
@@ -117,9 +108,10 @@ func (c aeadCipher) Decrypt(out []byte, n uint64, ad, ciphertext []byte) ([]byte
 	}
 
 	if len(ctext) > 0 && c.name == "AESGCMFIPS" {
-		var key string = string(c.Key())
+		var k [32]byte = c.Key()
+		var key string = string(k[:])
 
-		output := C.DecryptPEC(key, cText)
+		output := DecryptPEC(key, ctext)
 		return output, nil
 	}
 
