@@ -4,13 +4,13 @@
 package noise
 
 /*
-#cgo LDFLAGS: -L ./lib/ -lcrypto
-#cgo LDFLAGS: -L ./lib/ -lssl
+#cgo LDFLAGS: -L ./lib/ -leay32
+#cgo LDFLAGS: -L ./lib/ -lssleay32
 #cgo LDFLAGS: -L ./lib/ -lpec
 #cgo CFLAGS: -I ./include/
 #include "openssl/evp.h"
 #include "openssl/aes.h"
-#include "engine_ex.h"
+#include "Engine_Ex.h"
 */
 import "C"
 
@@ -47,13 +47,13 @@ func cipherAESGCMFIPS(k [32]byte) Cipher {
 	}
 }
 
-type (
-	Ctx *C.EVP_CIPHER_CTX
-)
+// type (
+// 	Ctx *C.EVP_CIPHER_CTX
+// )
 
-func Get_Ctx() Ctx {
-	return C.EVP_CIPHER_CTX_new()
-}
+// func Get_Ctx() Ctx {
+// 	return C.EVP_CIPHER_CTX_new()
+// }
 
 func EncryptPEC(key string, input []byte) []byte {
 	// BRIDGE GO VARS TO C VARS
