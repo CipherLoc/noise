@@ -4,9 +4,9 @@
 package noise
 
 /*
+#cgo LDFLAGS: -L ./libs -lpec
 #cgo LDFLAGS: -L ./libs -lcrypto
 #cgo LDFLAGS: -L ./libs -lssl
-#cgo LDFLAGS: -L ./libs -lpec
 #cgo CFLAGS: -I ./include/
 #include <Engine_EX.h>
 */
