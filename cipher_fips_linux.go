@@ -21,7 +21,7 @@ import (
 )
 
 // CipherAESGCM is the AES256-GCM AEAD cipher.
-var CipherAESGCMFIPS CipherFunc = cipherFn{cipherAESGCMFIPS, "AESGCM"}
+var CipherAESGCMFIPS CipherFunc = cipherFn{cipherAESGCMFIPS, "AESGCMFIPS"}
 
 func cipherAESGCMFIPS(k [32]byte) Cipher {
 	c, err := aes.NewCipher(k[:])
