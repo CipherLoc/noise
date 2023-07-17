@@ -12,9 +12,9 @@ func Test(t *testing.T) { TestingT(t) }
 
 type NoiseSuite struct{}
 
-var _ = Suite(&NoiseSuite{})
-
 type RandomInc byte
+
+var _ = Suite(&NoiseSuite{})
 
 func (r *RandomInc) Read(p []byte) (int, error) {
 	for i := range p {
@@ -674,4 +674,75 @@ func (NoiseSuite) TestRekey(c *C) {
 	msg, err = csI1.Decrypt(nil, nil, nil)
 	c.Assert(err, Equals, ErrMaxNonce)
 	c.Assert(msg, IsNil)
+}
+
+func (NoiseSuite) TestFIPS(c *C) {
+	//c := C{}
+	cs := NewCipherSuite(DH25519, CipherAESGCMFIPS, HashSHA256)
+	rngI := new(RandomInc)
+	rngR := new(RandomInc)
+	*rngR = 1
+
+	staticI, _ := cs.GenerateKeypair(rngI)
+	staticR, _ := cs.GenerateKeypair(rngR)
+
+	hsI, _ := NewHandshakeState(Config{
+		CipherSuite:   cs,
+		Random:        rngI,
+		Pattern:       HandshakeXX,
+		Initiator:     true,
+		StaticKeypair: staticI,
+	})
+	hsR, _ := NewHandshakeState(Config{
+		CipherSuite:   cs,
+		Random:        rngR,
+		Pattern:       HandshakeXX,
+		StaticKeypair: staticR,
+	})
+
+	// -> e
+	msg, _, _, _ := hsI.WriteMessage(nil, []byte("abcdef"))
+	c.Assert(msg, HasLen, 38)
+	res, _, _, err := hsR.ReadMessage(nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(string(res), Equals, "abcdef")
+
+	// <- e, dhee, s, dhse
+	msg, _, _, _ = hsR.WriteMessage(nil, nil)
+	c.Assert(msg, HasLen, 96)
+	//c.Assert(msg, HasLen, 192)
+	res, _, _, err = hsI.ReadMessage(nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(res, HasLen, 0)
+
+	// // -> s, dhse
+	payload := "0123456789012345678901234567890123456789012345678901234567890123456789"
+	msg, csI0, csI1, _ := hsI.WriteMessage(nil, []byte(payload))
+	c.Assert(msg, HasLen, 134)
+	res, csR0, csR1, err := hsR.ReadMessage(nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(string(res), Equals, payload)
+
+	// transport message I -> R
+	msg, err = csI0.Encrypt(nil, nil, []byte("wubba"))
+	c.Assert(err, IsNil)
+	res, err = csR0.Decrypt(nil, nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(string(res), Equals, "wubba")
+
+	// transport message I -> R again
+	msg, err = csI0.Encrypt(nil, nil, []byte("aleph"))
+	c.Assert(err, IsNil)
+	res, err = csR0.Decrypt(nil, nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(string(res), Equals, "aleph")
+
+	// transport message R <- I
+	msg, err = csR1.Encrypt(nil, nil, []byte("worri"))
+	c.Assert(err, IsNil)
+	res, err = csI1.Decrypt(nil, nil, msg)
+	c.Assert(err, IsNil)
+	c.Assert(string(res), Equals, "worri")
+
+	//fmt.Println("End of FIPS")
 }
