@@ -45,14 +45,6 @@ func cipherAESGCMFIPS(k [32]byte) Cipher {
 	}
 }
 
-// type (
-// 	Ctx *C.EVP_CIPHER_CTX
-// )
-
-// func Get_Ctx() Ctx {
-// 	return C.EVP_CIPHER_CTX_new()
-// }
-
 func EncryptPEC(key string, input []byte) []byte {
 	// BRIDGE GO VARS TO C VARS
 	pKey := (*C.uchar)(unsafe.Pointer(C.CString(key)))
@@ -93,35 +85,41 @@ func (c aeadCipher) Name() string { return c.name }
 
 func (c aeadCipher) Encrypt(out []byte, n uint64, ad, plaintext []byte) []byte {
 
-	if len(plaintext) > 0 && c.name == "AESGCMFIPS" {
-		var inputArray []byte = []byte(plaintext)
-		var k [32]byte = c.Key()
-		var key string = string(k[:])
+	ciphertext := c.Seal(out, c.nonce(n), plaintext, ad)
 
-		output := EncryptPEC(string(key), inputArray)
-		ciphertext := c.Seal(out, c.nonce(n), output, ad)
-
+	// ONLY HAPPENS WHEN ENCRYTPING KEYS
+	if len(ad) > 0 {
 		return ciphertext
 	}
 
-	return c.Seal(out, c.nonce(n), plaintext, ad)
-}
-
-func (c aeadCipher) Decrypt(out []byte, n uint64, ad, ciphertext []byte) ([]byte, error) {
-
-	ctext, err := c.Open(out, c.nonce(n), ciphertext, ad)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return ctext, err
-	}
-
-	if len(ctext) > 0 && c.name == "AESGCMFIPS" {
+	// ENCRYPT FIPS
+	if len(ciphertext) > 0 && c.name == "AESGCMFIPS" {
 		var k [32]byte = c.Key()
 		var key string = string(k[:])
 
-		output := DecryptPEC(key, ctext)
-		return output, nil
+		output := EncryptPEC(string(key), ciphertext)
+		return output
 	}
 
-	return ctext, nil
+	return ciphertext
+}
+
+func (c aeadCipher) Decrypt(out []byte, n uint64, ad, ciphertext []byte) ([]byte, error) {
+	var output = ciphertext
+
+	// DECRYPT FIPS
+	if len(ad) == 0 && len(ciphertext) > 0 && c.name == "AESGCMFIPS" {
+		var k [32]byte = c.Key()
+		var key string = string(k[:])
+
+		output = DecryptPEC(key, ciphertext)
+	}
+
+	plaintext, err := c.Open(out, c.nonce(n), output, ad)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return plaintext, err
+	}
+
+	return plaintext, nil
 }
